@@ -1,9 +1,10 @@
 var KratosToken = artifacts.require("./KratosToken.sol");
-var KratosPreSale = artifacts.require("./KratosPreSale.sol");
+var KratosPresale = artifacts.require("./KratosPresale.sol");
 
 module.exports = function(deployer) {
 
-  const goal = 80000000000000000000000000;
+  const goal = web3.toWei("5000", "ether");
+  const cap = 80000000000000000000000000;
   const openingTime = web3.eth.getBlock('latest').timestamp + 600; // 10 mins in the future
   const closingTime = openingTime + 86400 * 20; // 20 days
   const rate = new web3.BigNumber(1250);
@@ -13,8 +14,9 @@ module.exports = function(deployer) {
     return deployer.deploy(KratosToken);
   }).then(() => {
     return deployer.deploy(
-      KratosPreSale,
+      KratosPresale,
       goal,
+      cap,
       openingTime,
       closingTime,
       rate,
