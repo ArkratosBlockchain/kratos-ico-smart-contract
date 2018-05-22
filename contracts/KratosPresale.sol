@@ -9,6 +9,10 @@ import "./KratosToken.sol";
 
 contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
+    function() external payable {
+        buyTokens(msg.sender);
+    }
+
     function KratosPresale(
         uint256 _goal,
         uint256 _cap,
@@ -17,9 +21,7 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
         uint256 _rate,
         address _wallet,
         KratosToken _token
-    )
-
-    public
+    ) public
         Crowdsale(_rate, _wallet, _token)
         CappedCrowdsale(_cap) // hard cap
         RefundableCrowdsale(_goal) // soft cap, allow refund if goal not reached
