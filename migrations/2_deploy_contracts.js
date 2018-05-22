@@ -4,8 +4,8 @@ var KratosPresale = artifacts.require("./KratosPresale.sol");
 module.exports = function(deployer) {
 
   const goal = web3.toWei("5000", "ether");
-  const cap = 80000000000000000000000000;
-  const openingTime = web3.eth.getBlock('latest').timestamp + 600; // 10 mins in the future
+  const cap = web3.toWei("80000", "ether");
+  const openingTime = web3.eth.getBlock('latest').timestamp;
   const closingTime = openingTime + 86400 * 20; // 20 days
   const rate = new web3.BigNumber(1250);
   const wallet = web3.eth.accounts[0];
