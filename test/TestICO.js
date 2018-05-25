@@ -90,6 +90,21 @@ contract('KratosPresale', function(accounts) {
 
             const tokenBalance = await instance.balances.call(accounts[7]);
             assert.equal(tokenBalance.toNumber(), 1999000000000000000000, '1999 Tokens are held in custody before Presale ends');
+
+            done();
+        });
+    });
+
+    it('should allow more than one purchaser', function(done){
+        KratosPresale.deployed().then(async function(instance) {
+            const tokenAddress = await instance.token.call();
+            const kratosToken = KratosToken.at(tokenAddress);
+
+            await instance.addToWhitelist(accounts[5]);
+            await instance.sendTransaction({ from: accounts[5], value: web3.toWei(1, "ether") });
+            const tokenBalance = await instance.balances.call(accounts[5]);
+            assert.equal(tokenBalance.toNumber(), 1999000000000000000000, 'Another account unable to purchase 1999 tokens');
+
             done();
         });
     });
@@ -137,26 +152,29 @@ contract('KratosPresale', function(accounts) {
             let postBalance = await web3.eth.getBalance(accounts[1]);
             postBalance = Number(postBalance.toString(10));
 
-            assert.equal(postBalance, preBalance + 1000000000000000000, 'ETH couldn\'t be transferred to the owner');
+            assert.equal(postBalance, preBalance + 2000000000000000000, 'ETH couldn\'t be transferred to the owner');
             done();
         });
     });
 
     it('should deliver tokens to investors', function(done){
         KratosPresale.deployed().then(async function(instance) {
-            await instance.withdrawTokens({from: accounts[7]});
+            await instance.withdrawTokensMultiple([accounts[5], accounts[7]]);
 
             const tokenAddress = await instance.token.call();
             const token = KratosToken.at(tokenAddress);
 
             const ownerSupply = await token.balanceOf(instance.address);
-            assert.equal(ownerSupply.toNumber(), 80000000000000000000000000-1999000000000000000000, "Owner supply is not 1999 less");
+            assert.equal(ownerSupply.toNumber(), 80000000000000000000000000-1999000000000000000000*2, "Owner supply is not 1999*2 less");
 
             const totalSupply = await token.totalSupply.call();
             assert.equal(totalSupply.toNumber(), 300000000000000000000000000, "Total token supply is not 300 million");
 
-            const tokenAmount = await token.balanceOf(accounts[7]);
-            assert.equal(tokenAmount.toNumber(), 1999000000000000000000, 'The sender didn\'t receive 1999 tokens post delivery');
+            const tokenAmountA = await token.balanceOf(accounts[5]);
+            assert.equal(tokenAmountA.toNumber(), 1999000000000000000000, 'Sender A didn\'t receive 1999 tokens post delivery');
+
+            const tokenAmountB = await token.balanceOf(accounts[7]);
+            assert.equal(tokenAmountB.toNumber(), 1999000000000000000000, 'Sender B didn\'t receive 1999 tokens post delivery');
 
             done();
         });
