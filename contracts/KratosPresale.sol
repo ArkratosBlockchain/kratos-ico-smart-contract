@@ -9,10 +9,6 @@ import "./KratosToken.sol";
 
 contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
-    function() external payable {
-        buyTokens(msg.sender);
-    }
-
     function KratosPresale(
         uint256 _goal,
         uint256 _cap,
@@ -37,9 +33,8 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
 
     function setClosingTime(uint256 _closingTime) external onlyOwner {
         // solium-disable-next-line security/no-block-members
-        require(_closingTime > block.timestamp);
-        require(_closingTime > openingTime);
-        require(_closingTime > closingTime);
+        require(_closingTime >= block.timestamp);
+        require(_closingTime >= openingTime);
 
         closingTime = _closingTime;
     }
