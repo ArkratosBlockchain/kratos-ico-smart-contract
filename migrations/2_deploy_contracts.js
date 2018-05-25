@@ -13,8 +13,10 @@ module.exports = async (deployer) => {
   const wallet = web3.eth.accounts[1];
 
   return deployer.then(async () => {
+    // deploy token
     return deployer.deploy(KratosToken, tokenTotalSupply);
   }).then(async () => {
+    // deploy crowdsale contract with initialization parameters
     return deployer.deploy(
       KratosPresale,
       goal,
@@ -26,8 +28,10 @@ module.exports = async (deployer) => {
       KratosToken.address, 
     );
   }).then(async () => {
+
     web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [10], id: Date.now()});
 
+    // transfer supply to crowdsale contract
     const token = KratosToken.at(KratosToken.address);
     await token.transfer(KratosPresale.address, tokenPresaleSupply);
     token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180);
