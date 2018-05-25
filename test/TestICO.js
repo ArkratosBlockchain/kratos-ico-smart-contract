@@ -99,11 +99,11 @@ contract('KratosPresale', function(accounts) {
             var hasClosed = await instance.hasClosed();
             assert(!hasClosed, false, 'Presale closed prematurely');
 
-            var newClosingTime = web3.eth.getBlock('latest').timestamp;
+            var newClosingTime = web3.eth.getBlock('latest').timestamp+30 // add 30 seconds allowance in case the next block is mined again before setting closing time;
             await instance.setClosingTime(newClosingTime);
             // trigger mining of new block and then "forward time"
             web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()});
-            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [500000], id: Date.now()});
+            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [120], id: Date.now()});
             var hasClosed = await instance.hasClosed();
             assert(hasClosed, 'Presale did not close');
             done();
