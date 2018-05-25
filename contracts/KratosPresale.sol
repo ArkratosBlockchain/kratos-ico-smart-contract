@@ -50,4 +50,14 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
             }
         }
     }
+
+    function claimRefundMultiple(address[] addresses) public onlyOwner {
+        require(isFinalized);
+        require(!goalReached());
+
+        for (uint i = 0; i < addresses.length; i++) {
+            address addr = addresses[i];
+            vault.refund(addr);
+        }
+    }
 }
