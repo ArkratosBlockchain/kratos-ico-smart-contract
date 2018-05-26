@@ -9,7 +9,7 @@ contract KratosToken is StandardBurnableToken, PausableToken {
     string public symbol = "TOS";
     uint8 public decimals = 18;
 
-    uint256 timelockTimestamp = 0;
+    uint256 public timelockTimestamp = 0;
     mapping(address => uint256) public timelock;
 
     function KratosToken(uint256 totalSupply) {
