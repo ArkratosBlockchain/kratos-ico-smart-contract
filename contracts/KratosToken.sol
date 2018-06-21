@@ -12,7 +12,7 @@ contract KratosToken is StandardBurnableToken, PausableToken {
     uint256 public timelockTimestamp = 0;
     mapping(address => uint256) public timelock;
 
-    function KratosToken(uint256 totalSupply) {
+    constructor(uint256 totalSupply) public {
         // constructor
         totalSupply_ = totalSupply;
         balances[msg.sender] = totalSupply;

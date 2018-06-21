@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/crowdsale/distribution/PostDeliveryCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
@@ -9,7 +9,7 @@ import "./KratosToken.sol";
 
 contract KratosFinalsale is CappedCrowdsale, WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
-    function KratosFinalsale(
+    constructor(
         uint256 _cap,
         uint256 _openingTime,
         uint256 _closingTime,
