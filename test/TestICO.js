@@ -159,7 +159,8 @@ contract('KratosPresale', function(accounts) {
 
     it('should deliver tokens to investors', function(done){
         KratosPresale.deployed().then(async function(instance) {
-            await instance.withdrawTokensMultiple([accounts[5], accounts[7]]);
+            await instance.withdrawTokens(accounts[5]);
+            await instance.withdrawTokens(accounts[7]);
 
             const tokenAddress = await instance.token.call();
             const token = KratosToken.at(tokenAddress);
