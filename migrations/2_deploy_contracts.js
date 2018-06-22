@@ -2,21 +2,29 @@ var KratosToken = artifacts.require("./KratosToken.sol");
 var KratosPresale = artifacts.require("./KratosPresale.sol");
 var KratosFinalsale = artifacts.require("./KratosFinalsale.sol");
 
-module.exports = async (deployer) => {
+module.exports = async (deployer, network) => {
 
-  const deployDelay = 1000;
+  if (network === 'development')
+    return;
+
+  let deployDelay = 60*30; // 30 minutes
+    deployDelay = 30;
+  
+  if (network === 'ropsten')
+    deployDelay = 60*10;  // 10 minutes
+  
 
   return deployer.then(async () => {
     // deploy token
     const tokenTotalSupply = 300000000000000000000000000;
-    return deployer.deploy(KratosToken, tokenTotalSupply, {gas: 4000000, gasPrice: web3.toWei(10, "gwei")} );
+    return deployer.deploy(KratosToken, tokenTotalSupply, {gas: 4700000, gasPrice: web3.toWei(4, "gwei")} );
   }).then(async () => {
 
     console.log("deploying presale...");
 
     const goal = web3.toWei("1", "ether");
     const cap = web3.toWei("10", "ether");
-    const openingTime = web3.eth.getBlock('latest').timestamp+1000; // !IMPT :: opening timestamp has to be much later when deploying to public networks as it takes some time before contract gets initialized
+    const openingTime = web3.eth.getBlock('latest').timestamp+deployDelay; // !IMPT :: opening timestamp has to be much later when deploying to public networks as it takes some time before contract gets initialized
     const closingTime = openingTime + 86400 * 20; // 20 days
     const rate = new web3.BigNumber(1250);
     const wallet = web3.eth.accounts[1];
@@ -38,7 +46,8 @@ module.exports = async (deployer) => {
       closingTime,
       rate,
       wallet,
-      KratosToken.address
+      KratosToken.address,
+      {gas: 4700000, gasPrice: web3.toWei(4, "gwei")}
     );
   }).then(async () => {
 
@@ -53,7 +62,9 @@ module.exports = async (deployer) => {
     await token.transfer(KratosPresale.address, tokenPresaleSupply);
     token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180);
 
-  }).then(async () => {
+  })/*.then(async () => {
+
+    // TODO :: somehow need to separate presale and finalsale because timelock value will affaect presale if set in final sale for testing
 
     console.log("deploying finalsale...");
 
@@ -79,7 +90,8 @@ module.exports = async (deployer) => {
       closingTime,
       rate,
       wallet,
-      KratosToken.address
+      KratosToken.address,
+      {gas: 4700000, gasPrice: web3.toWei(4, "gwei")}
     );
   }).then(async () => {
 
@@ -100,5 +112,5 @@ module.exports = async (deployer) => {
     token.disableTimelock();
     await token.transfer(KratosFinalsale.address, tokenFinalsaleSupply);
 
-  });
+  })*/;
 };

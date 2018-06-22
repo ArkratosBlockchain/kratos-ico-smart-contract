@@ -1,218 +1,185 @@
-import 'babel-polyfill';
+import 'babel-polyfill'
 
-var KratosToken = artifacts.require("KratosToken");
-var KratosPresale = artifacts.require("KratosPresale");
-var RefundVault = artifacts.require("RefundVault");
+var KratosToken = artifacts.require("KratosToken")
+var KratosPresale = artifacts.require("KratosPresale")
+var RefundVault = artifacts.require("RefundVault")
 
-contract('KratosPresale', function(accounts) {
+contract('KratosPresale', async (accounts) => {
 
-    before(async function() {
-        // advance block so that it is pass the opening time during deployment
-        web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()});
-        web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [5], id: Date.now()});
-    });
+    const tokenTotalSupply = 3e26;
+    const tokenPresaleSupply = 8e25;
+    const deployDelay = 30
+    const goal = web3.toWei("1", "ether")
+    const cap = web3.toWei("10", "ether")
+    const openingTime = web3.eth.getBlock('latest').timestamp + deployDelay
+    const closingTime = openingTime + 86400 * 20 // 20 days
+    const rate = new web3.BigNumber(1250)
+    const wallet = web3.eth.accounts[1]
 
-    it('should deploy the token and store the address', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const token = await instance.token.call();
-            assert(token, 'Token address couldn\'t be stored');
-            done();
-        });
-    });
+    let token = null
+    let presale = null
 
-    it('should set rate to 1999', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            await instance.setRate(1999);
-            const rate = await instance.rate.call();
-            assert.equal(rate.toNumber(), 1999, 'The rate couldn\'t be set to 1999');
-            done();
-        });
-    });
+    before(async () => {
+        await KratosToken.new(tokenTotalSupply).then( (instance) => {
 
-    it('should not allow non whitelisted address to buy', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            await instance.sendTransaction({ from: accounts[7], value: web3.toWei(1, "ether") });
-            assert(false, "Non whitelisted address did not encounter error when purchasing");
-            done();
-        }).catch(function(error) {
-            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error");
-            done();
-        });
-    });
+            token = instance
 
-    it('should allow whitelisted address to buy', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            await instance.addToWhitelist(accounts[7]);
-            assert(instance.sendTransaction({ from: accounts[7], value: web3.toWei(1, "ether") }), "Whitelisted address unable to purchase");
-            done();
-        });
-    });
+            return KratosPresale.new(
+                goal,
+                cap,
+                openingTime,
+                closingTime,
+                rate,
+                wallet,
+                token.address,
+            )
+        }).then(async (instance) => {
 
-    it('should not allow total purchase to exceed hard cap', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            let balance = await web3.eth.getBalance(accounts[7]);
-            assert(balance >= 7, "Account insufficient fund to buy over hard cap limit");
+            presale = instance
 
-            await instance.sendTransaction({ from: accounts[7], value: web3.toWei(10, "ether") });
+            // transfer supply to crowdsale contract
+            await token.transfer(presale.address, tokenPresaleSupply);
+            token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180);
+        
+            // advance block so that it is pass the opening time during deployment
+            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()})
+            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [deployDelay+1], id: Date.now()})
+        })
+    })
 
-            assert(false, "Transaction succeed even when total wei raised is expected to be over hard cap");
-            done();
-        }).catch(function(error) {
-            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error");
-            done();
-        });
-    });
+    it('should deploy the token and store the address', async () => {
+        assert(token.address, 'Token address couldn\'t be stored')
+    })
 
-    it('should store proceed of sales into refundVault', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const vaultAddress = await instance.vault.call();
-            const vault = RefundVault.at(vaultAddress);
-            const vaultTokenAmount = await vault.deposited(accounts[7]);
-            assert.equal(vaultTokenAmount.toNumber(), 1000000000000000000, 'Didn\'t receive the same amount of ETH in refund vault');
-            done();
-        });
-    });
+    it('should set rate to 1999', async () => {
+        await presale.setRate(1999)
+        const rate = await presale.rate.call()
+        assert.equal(rate.toNumber(), 1999, 'The rate couldn\'t be set to 1999')
+    })
 
-    it('should set variable `weiRaised` correctly', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            var amount = await instance.weiRaised.call();
-            assert.equal(amount.toNumber(), web3.toWei(1, "ether"), 'Total ETH raised in Presale was not calculated correctly');
-            done();
-        });
-    });
+    it('should not allow non whitelisted address to buy', async () => {
+        try {
+            await presale.sendTransaction({ from: accounts[7], value: web3.toWei(1, "ether") })
+            assert(false, "Non whitelisted address did not encounter error when purchasing")
+        } catch(error) {
+            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error")
+        }
+    })
 
-    it('one ETH should buy 1999 Kratos Tokens and stored as balance in Presale contract for Post Delivery, not Token contract', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const tokenAddress = await instance.token.call();
-            const kratosToken = KratosToken.at(tokenAddress);
-            const tokenAmount = await kratosToken.balanceOf(accounts[7]);
-            assert.equal(tokenAmount.toNumber(), 0, 'The sender shouldn\'t receive the tokens before Presale ends');
+    it('should allow whitelisted address to buy', async () => {
+        await presale.addToWhitelist(accounts[7])
+        assert(presale.sendTransaction({ from: accounts[7], value: web3.toWei(1, "ether") }), "Whitelisted address unable to purchase")
+    })
 
-            const tokenBalance = await instance.balances.call(accounts[7]);
-            assert.equal(tokenBalance.toNumber(), 1999000000000000000000, '1999 Tokens are held in custody before Presale ends');
+    it('should not allow total purchase to exceed hard cap', async ()=> {
+        try {
+            let balance = await web3.eth.getBalance(accounts[7])
+            assert(balance >= 7, "Account insufficient fund to buy over hard cap limit")
 
-            done();
-        });
-    });
+            await presale.sendTransaction({ from: accounts[7], value: web3.toWei(10, "ether") })
 
-    it('should allow more than one purchaser', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const tokenAddress = await instance.token.call();
-            const kratosToken = KratosToken.at(tokenAddress);
+            assert(false, "Transaction succeed even when total wei raised is expected to be over hard cap")
+        } catch (error) {
+            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error")
+        }
+    })
 
-            await instance.addToWhitelist(accounts[5]);
-            await instance.sendTransaction({ from: accounts[5], value: web3.toWei(1, "ether") });
-            const tokenBalance = await instance.balances.call(accounts[5]);
-            assert.equal(tokenBalance.toNumber(), 1999000000000000000000, 'Another account unable to purchase 1999 tokens');
+    it('should store proceed of sales into refundVault', async () => {
+        const vaultAddress = await presale.vault.call()
+        const vault = RefundVault.at(vaultAddress)
+        const vaultTokenAmount = await vault.deposited(accounts[7])
+        assert.equal(vaultTokenAmount.toNumber(), 1e18, 'Didn\'t receive the same amount of ETH in refund vault')
+    })
 
-            done();
-        });
-    });
+    it('should set variable `weiRaised` correctly', async () => {
+        var amount = await presale.weiRaised.call()
+        assert.equal(amount.toNumber(), web3.toWei(1, "ether"), 'Total ETH raised in Presale was not calculated correctly')
+    })
 
-    it('should end Presale now', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            var hasClosed = await instance.hasClosed();
-            assert(!hasClosed, false, 'Presale closed prematurely');
+    it('one ETH should buy 1999 Kratos Tokens and stored as balance in Presale contract for Post Delivery, not Token contract', async () => {
+        const tokenAmount = await token.balanceOf(accounts[7])
+        assert.equal(tokenAmount.toNumber(), 0, 'The sender shouldn\'t receive the tokens before Presale ends')
 
-            var newClosingTime = web3.eth.getBlock('latest').timestamp+30 // add 30 seconds allowance in case the next block is mined again before setting closing time;
-            await instance.setClosingTime(newClosingTime);
-            // trigger mining of new block and then "forward time"
-            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()});
-            web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [120], id: Date.now()});
-            var hasClosed = await instance.hasClosed();
-            assert(hasClosed, 'Presale did not close');
-            done();
-        });
-    });
+        const tokenBalance = await presale.balances.call(accounts[7])
+        assert.equal(tokenBalance.toNumber(), 1999e18, '1999 Tokens are held in custody before Presale ends')
+    })
 
-    it('should have 80 million Presale tokens', function(done){
-        KratosPresale.deployed().then(async function(instance) {
+    it('should allow more than one purchaser', async () => {
+        await presale.addToWhitelist(accounts[5])
+        await presale.sendTransaction({ from: accounts[5], value: web3.toWei(1, "ether") })
+        const tokenBalance = await presale.balances.call(accounts[5])
+        assert.equal(tokenBalance.toNumber(), 1999e18, 'Another account unable to purchase 1999 tokens')
+    })
 
-            const tokenAddress = await instance.token.call();
-            const token = KratosToken.at(tokenAddress);
+    it('should end Presale now', async () => {
+        var hasClosed = await presale.hasClosed()
+        assert(!hasClosed, false, 'Presale closed prematurely')
 
-            const presaleSupply = await token.balanceOf(instance.address);
-            assert.equal(presaleSupply.toNumber(), 80000000000000000000000000, "Presale supply is not 80 million");
+        var newClosingTime = web3.eth.getBlock('latest').timestamp+30 // add 30 seconds allowance in case the next block is mined again before setting closing time
+        await presale.setClosingTime(newClosingTime)
+        // trigger mining of new block and then "forward time"
+        web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()})
+        web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [120], id: Date.now()})
+        var hasClosed = await presale.hasClosed()
+        assert(hasClosed, 'Presale did not close')
+    })
 
-            done();
-        });
-    });
+    it('should have 80 million Presale tokens', async () => {
+        const presaleSupply = await token.balanceOf(presale.address)
+        assert.equal(presaleSupply.toNumber(), 8e25, "Presale supply is not 80 million")
+    })
 
-    it('should transfer the ETH to wallet after Presale is successful and finalized', function(done){
-        KratosPresale.deployed().then(async function(instance) {
+    it('should transfer the ETH to wallet after Presale is successful and finalized', async () => {
+        const goalReached = await presale.goalReached()
+        assert(goalReached, "Crowdfunding goal not reached")
 
-            const goalReached = await instance.goalReached();
-            assert(goalReached, "Crowdfunding goal not reached");
+        let preBalance = await web3.eth.getBalance(accounts[1])
+        preBalance = Number(preBalance.toString(10))
 
-            let preBalance = await web3.eth.getBalance(accounts[1]);
-            preBalance = Number(preBalance.toString(10));
+        await presale.finalize()
 
-            await instance.finalize();
+        let postBalance = await web3.eth.getBalance(accounts[1])
+        postBalance = Number(postBalance.toString(10))
 
-            let postBalance = await web3.eth.getBalance(accounts[1]);
-            postBalance = Number(postBalance.toString(10));
+        assert.equal(postBalance, preBalance + 2e18, 'ETH couldn\'t be transferred to the owner')
+    })
 
-            assert.equal(postBalance, preBalance + 2000000000000000000, 'ETH couldn\'t be transferred to the owner');
-            done();
-        });
-    });
+    it('should deliver tokens to investors', async () => {
+        await presale.withdrawTokens(accounts[5])
+        await presale.withdrawTokens(accounts[7])
 
-    it('should deliver tokens to investors', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            await instance.withdrawTokens(accounts[5]);
-            await instance.withdrawTokens(accounts[7]);
+        const ownerSupply = await token.balanceOf(presale.address)
+        assert.equal(ownerSupply.toNumber(), 8e25-1999e18*2, "Owner supply is not 1999*2 less")
 
-            const tokenAddress = await instance.token.call();
-            const token = KratosToken.at(tokenAddress);
+        const totalSupply = await token.totalSupply.call()
+        assert.equal(totalSupply.toNumber(), 3e26, "Total token supply is not 300 million")
 
-            const ownerSupply = await token.balanceOf(instance.address);
-            assert.equal(ownerSupply.toNumber(), 80000000000000000000000000-1999000000000000000000*2, "Owner supply is not 1999*2 less");
+        const tokenAmountA = await token.balanceOf(accounts[5])
+        assert.equal(tokenAmountA.toNumber(), 1999e18, 'Sender A didn\'t receive 1999 tokens post delivery')
 
-            const totalSupply = await token.totalSupply.call();
-            assert.equal(totalSupply.toNumber(), 300000000000000000000000000, "Total token supply is not 300 million");
+        const tokenAmountB = await token.balanceOf(accounts[7])
+        assert.equal(tokenAmountB.toNumber(), 1999e18, 'Sender B didn\'t receive 1999 tokens post delivery')
+    })
 
-            const tokenAmountA = await token.balanceOf(accounts[5]);
-            assert.equal(tokenAmountA.toNumber(), 1999000000000000000000, 'Sender A didn\'t receive 1999 tokens post delivery');
+    it('should timelock Presale tokens', async () => {
+        try {
+            await token.transfer(accounts[8], 1, {from: accounts[7]})
+        } catch(error) {
+            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error")
+        }
+    })
 
-            const tokenAmountB = await token.balanceOf(accounts[7]);
-            assert.equal(tokenAmountB.toNumber(), 1999000000000000000000, 'Sender B didn\'t receive 1999 tokens post delivery');
+    it('should be able to transfer token after timelock', async () => {
+        const senderPreBalance = await token.balanceOf(accounts[7])
 
-            done();
-        });
-    });
+        await token.disableTimelock()
+        await token.removeTimelock(accounts[7])
+        await token.transfer(accounts[8], 1e18, {from: accounts[7]})
 
-    it('should timelock Presale tokens', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const tokenAddress = await instance.token.call();
-            const token = KratosToken.at(tokenAddress);
+        const senderPostBalance = await token.balanceOf(accounts[7])
+        assert.equal(senderPreBalance.toNumber() - senderPostBalance.toNumber(), 1e18, "1 token is not transfered out of sender")
 
-            await token.transfer(accounts[8], 1, {from: accounts[7]});
-            done();
-        }).catch(function(error) {
-            assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error");
-            done();
-        });
-    });
-
-    it('should be able to transfer token after timelock', function(done){
-        KratosPresale.deployed().then(async function(instance) {
-            const tokenAddress = await instance.token.call();
-            const token = KratosToken.at(tokenAddress);
-
-            const tokenTimestamp = await token.timelock.call(accounts[7]);
-
-            const senderPreBalance = await token.balanceOf(accounts[7]);
-
-            await token.disableTimelock();
-            await token.removeTimelock(accounts[7]);
-            await token.transfer(accounts[8], 1000000000000000000, {from: accounts[7]});
-
-            const senderPostBalance = await token.balanceOf(accounts[7]);
-            assert.equal(senderPreBalance.toNumber() - senderPostBalance.toNumber(), 1000000000000000000, "1 token is not transfered out of sender");
-
-            const balance = await token.balanceOf(accounts[8]);
-            assert.equal(balance.toNumber(), 1000000000000000000, "1 token is not received by recipient");
-            done();
-        });
-    });
-});
+        const balance = await token.balanceOf(accounts[8])
+        assert.equal(balance.toNumber(), 1e18, "1 token is not received by recipient")
+    })
+})
