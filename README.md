@@ -1,0 +1,1 @@
+#KRATOS Token Crowdsale Smart Contract
