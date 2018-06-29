@@ -1,0 +1,148 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: ico-event-processor
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: staging
+  region: ap-southeast-1
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+  iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+        Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+
+  # you can define service wide environment variables here
+  environment:
+    DYNAMODB_TABLE: "${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+    ETHEREUM_URI: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/ethereum-uri}"
+    WALLET_ADDRESS: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/wallet-address}"
+    API_URL: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-url}"
+    API_USER: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-user}"
+    API_PASS: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-pass}"
+
+# you can add packaging information here
+# package:
+#   include:
+#     - native/node_modules/**
+#   exclude:
+#     - node_modules/scrypt/**
+#     - node_modules/nan/**
+
+functions:
+  ico-purchase-processor:
+    handler: eventprocessor.purchase
+
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+      - schedule: rate(1 minute)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
+#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+#      - cloudwatchLog: '/aws/lambda/hello'
+#      - cognitoUserPool:
+#          pool: MyUserPool
+#          trigger: PreSignUp
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    # RDSDatabase:
+    #   Type: AWS::RDS::DBInstance
+    #   Properties:
+    #     Engine : mysql
+    #     # DBInstanceIdentifier: ${self:custom.databaseName}
+    #     MasterUsername: ${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/rds/username}
+    #     MasterUserPassword: ${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/rds/password}
+    #     DBInstanceClass : db.t2.micro
+    #     AllocatedStorage: '5'
+    #     PubliclyAccessible: true
+    #   DeletionPolicy: Snapshot
+    purchaseMonitorTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: purchaseProcessed
+        AttributeDefinitions:
+          - AttributeName: txHash
+            AttributeType: S
+          - AttributeName: blockNumber
+            AttributeType: N
+        KeySchema:
+          - AttributeName: txHash
+            KeyType: HASH
+          - AttributeName: blockNumber
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"

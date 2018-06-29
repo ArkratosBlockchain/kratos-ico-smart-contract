@@ -1,0 +1,18 @@
+{
+  "name": "serverless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "eventmonitor.js",
+  "scripts": {
+    "compile": "[ -e node_modules/scrypt/build/Release/scrypt.node ] || docker run --rm -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v $HOME:$HOME -w $PWD lambci/lambda:build-nodejs6.10 npm install scrypt",
+    "native": "docker run --rm -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v $HOME:$HOME -w $PWD/native lambci/lambda:build-nodejs6.10 npm install scrypt --prefix .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.265.1",
+    "request": "^2.87.0",
+    "web3": "^1.0.0-beta.34"
+  }
+}
