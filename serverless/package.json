@@ -4,15 +4,16 @@
   "description": "",
   "main": "eventmonitor.js",
   "scripts": {
-    "compile": "[ -e node_modules/scrypt/build/Release/scrypt.node ] || docker run --rm -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v $HOME:$HOME -w $PWD lambci/lambda:build-nodejs6.10 npm install scrypt",
-    "native": "docker run --rm -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v $HOME:$HOME -w $PWD/native lambci/lambda:build-nodejs6.10 npm install scrypt --prefix .",
+    "_comment": "need to compile scrypt package (web3 dependency) on AWS Lambda native environment",
+    "compile": "[ -e node_modules/scrypt/build/Release/scrypt.node ] || docker run --rm -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v $HOME:$HOME -w $PWD lambci/lambda:build-nodejs8.10 npm install scrypt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "^2.265.1",
-    "request": "^2.87.0",
+    "request-promise": "^4.2.2",
+    "scrypt": "^6.0.3",
     "web3": "^1.0.0-beta.34"
   }
 }

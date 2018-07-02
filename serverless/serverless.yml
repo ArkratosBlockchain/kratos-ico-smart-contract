@@ -19,7 +19,7 @@ service: ico-event-processor
 
 provider:
   name: aws
-  runtime: nodejs6.10
+  runtime: nodejs8.10
   stage: staging
   region: ap-southeast-1
 
