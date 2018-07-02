@@ -56,11 +56,12 @@ provider:
   # you can define service wide environment variables here
   environment:
     DYNAMODB_TABLE: "${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
-    ETHEREUM_URI: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/ethereum-uri}"
-    WALLET_ADDRESS: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/wallet-address}"
-    API_URL: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-url}"
-    API_USER: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-user}"
-    API_PASS: "${ssm:/ico-smart-contract/${opt:stage, self:provider.stage}/api-pass}"
+    ETHEREUM_URI: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/ethereum-uri}"
+    WALLET_ADDRESS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/wallet-address}"
+    API_URL: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-url}"
+    API_USER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-user}"
+    API_PASS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-pass}"
+    CONTRACT_JSON_PATH: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-json-path}"
 
 # you can add packaging information here
 # package:
@@ -69,6 +70,9 @@ provider:
 #   exclude:
 #     - node_modules/scrypt/**
 #     - node_modules/nan/**
+package:
+  include:
+    - ../build/contracts/Kratos*.json
 
 functions:
   ico-purchase-processor:
