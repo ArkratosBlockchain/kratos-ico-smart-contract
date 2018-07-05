@@ -2,7 +2,7 @@ import 'babel-polyfill'
 
 var KratosToken = artifacts.require("KratosToken")
 var KratosPresale = artifacts.require("KratosPresale")
-var RefundVault = artifacts.require("RefundVault")
+// var RefundVault = artifacts.require("RefundVault")
 
 contract('KratosPresale', async (accounts) => {
 
@@ -84,12 +84,12 @@ contract('KratosPresale', async (accounts) => {
         }
     })
 
-    it('should store proceed of sales into refundVault', async () => {
-        const vaultAddress = await presale.vault.call()
-        const vault = RefundVault.at(vaultAddress)
-        const vaultTokenAmount = await vault.deposited(accounts[7])
-        assert.equal(vaultTokenAmount.toNumber(), 1e18, 'Didn\'t receive the same amount of ETH in refund vault')
-    })
+    // it('should store proceed of sales into refundVault', async () => {
+    //     const vaultAddress = await presale.vault.call()
+    //     const vault = RefundVault.at(vaultAddress)
+    //     const vaultTokenAmount = await vault.deposited(accounts[7])
+    //     assert.equal(vaultTokenAmount.toNumber(), 1e18, 'Didn\'t receive the same amount of ETH in refund vault')
+    // })
 
     it('should set variable `weiRaised` correctly', async () => {
         var amount = await presale.weiRaised.call()
@@ -104,25 +104,25 @@ contract('KratosPresale', async (accounts) => {
         assert.equal(tokenBalance.toNumber(), 1999e18, '1999 Tokens are held in custody before Presale ends')
     })
 
-    it('should be able to withdraw funds before presale ends', async () => {
+    // it('should be able to withdraw funds before presale ends', async () => {
 
-        let preBalance = await web3.eth.getBalance(accounts[1])
-        preBalance = Number(preBalance.toString(10))
+    //     let preBalance = await web3.eth.getBalance(accounts[1])
+    //     preBalance = Number(preBalance.toString(10))
 
-        const vaultAddress = await presale.vault.call()
-        let withdrawAmount = await web3.eth.getBalance(vaultAddress)
-        withdrawAmount = Number(withdrawAmount.toString(10))
+    //     const vaultAddress = await presale.vault.call()
+    //     let withdrawAmount = await web3.eth.getBalance(vaultAddress)
+    //     withdrawAmount = Number(withdrawAmount.toString(10))
 
-        await presale.withdrawFunds()
+    //     await presale.withdrawFunds()
 
-        let postBalance = await web3.eth.getBalance(accounts[1])
-        postBalance = Number(postBalance.toString(10))
+    //     let postBalance = await web3.eth.getBalance(accounts[1])
+    //     postBalance = Number(postBalance.toString(10))
 
-        console.log('withdrawAmount', withdrawAmount)
-        console.log('preBalance', preBalance)
-        console.log('postBalance', postBalance)
-        assert.equal(postBalance, preBalance + withdrawAmount, 'ETH couldn\'t be transferred to the owner before presale ends')
-    })
+    //     console.log('withdrawAmount', withdrawAmount)
+    //     console.log('preBalance', preBalance)
+    //     console.log('postBalance', postBalance)
+    //     assert.equal(postBalance, preBalance + withdrawAmount, 'ETH couldn\'t be transferred to the owner before presale ends')
+    // })
 
     it('should allow more than one purchaser', async () => {
         await presale.addToWhitelist(accounts[5])
@@ -157,23 +157,22 @@ contract('KratosPresale', async (accounts) => {
         assert(hasClosed, 'Presale did not close')
     })
 
-    it('should transfer the remaining ETH in vault to wallet after Presale is successful and finalized', async () => {
-        const goalReached = await presale.goalReached()
-        assert(goalReached, "Crowdfunding goal not reached")
+    // it('should transfer the remaining ETH in vault to wallet after Presale is successful and finalized', async () => {
+    //     const goalReached = await presale.goalReached()
+    //     assert(goalReached, "Crowdfunding goal not reached")
 
-        let preBalance = await web3.eth.getBalance(accounts[1])
-        preBalance = Number(preBalance.toString(10))
+    //     let preBalance = await web3.eth.getBalance(accounts[1])
+    //     preBalance = Number(preBalance.toString(10))
 
-        await presale.finalize()
+    //     await presale.finalize()
 
-        let postBalance = await web3.eth.getBalance(accounts[1])
-        postBalance = Number(postBalance.toString(10))
+    //     let postBalance = await web3.eth.getBalance(accounts[1])
+    //     postBalance = Number(postBalance.toString(10))
 
-        assert.equal(postBalance, preBalance + 1e18, 'remaining ETH in vault couldn\'t be transferred to the owner')
-    })
+    //     assert.equal(postBalance, preBalance + 1e18, 'remaining ETH in vault couldn\'t be transferred to the owner')
+    // })
 
     it('should deliver tokens to investors', async () => {
-        await presale.withdrawTokens(accounts[5])
         await presale.withdrawTokens(accounts[7])
 
         const ownerSupply = await token.balanceOf(presale.address)
@@ -181,9 +180,6 @@ contract('KratosPresale', async (accounts) => {
 
         const totalSupply = await token.totalSupply.call()
         assert.equal(totalSupply.toNumber(), 3e26, "Total token supply is not 300 million")
-
-        const tokenAmountA = await token.balanceOf(accounts[5])
-        assert.equal(tokenAmountA.toNumber(), 1999e18, 'Sender A didn\'t receive 1999 tokens post delivery')
 
         const tokenAmountB = await token.balanceOf(accounts[7])
         assert.equal(tokenAmountB.toNumber(), 1999e18, 'Sender B didn\'t receive 1999 tokens post delivery')

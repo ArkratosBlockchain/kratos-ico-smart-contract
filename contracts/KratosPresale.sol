@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsal
 
 import "./KratosToken.sol";
 
-contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowdsale, PostDeliveryCrowdsale {
+contract KratosPresale is CappedCrowdsale, /*RefundableCrowdsale,*/ WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
     constructor(
         uint256 _goal,
@@ -20,7 +20,7 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
     ) public
         Crowdsale(_rate, _wallet, _token)
         CappedCrowdsale(_cap) // hard cap
-        RefundableCrowdsale(_goal) // soft cap, allow refund if goal not reached
+//        RefundableCrowdsale(_goal) // soft cap, allow refund if goal not reached
         TimedCrowdsale(_openingTime, _closingTime) {
     }
 
@@ -49,14 +49,15 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
     }
 
     // allow withdrawal of funds anytime
-    function withdrawFunds() public onlyOwner {
-        wallet.transfer(address(vault).balance);
-    } 
+    // function withdrawFunds() public onlyOwner {
+        
+    //     wallet.transfer(address(vault).balance);
+    // } 
 
-    function claimRefund(address addr) public onlyOwner {
-        require(isFinalized);
-        require(!goalReached());
+    // function claimRefund(address addr) public onlyOwner {
+    //     require(isFinalized);
+    //     require(!goalReached());
 
-        vault.refund(addr);
-    }
+    //     vault.refund(addr);
+    // }
 }
