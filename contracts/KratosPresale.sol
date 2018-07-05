@@ -39,13 +39,19 @@ contract KratosPresale is CappedCrowdsale, RefundableCrowdsale, WhitelistedCrowd
         closingTime = _closingTime;
     }
 
+    // allow withdrawal of tokens anytime
     function withdrawTokens(address addr) public onlyOwner {
-        require(hasClosed());
+        // require(hasClosed());
         uint256 amount = balances[addr];
         require(amount > 0);
         balances[addr] = 0;
         _deliverTokens(addr, amount);
     }
+
+    // allow withdrawal of funds anytime
+    function withdrawFunds() public onlyOwner {
+        wallet.transfer(address(vault).balance);
+    } 
 
     function claimRefund(address addr) public onlyOwner {
         require(isFinalized);

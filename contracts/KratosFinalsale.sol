@@ -37,8 +37,9 @@ contract KratosFinalsale is CappedCrowdsale, WhitelistedCrowdsale, PostDeliveryC
         closingTime = _closingTime;
     }
 
+    // allow withdrawal of tokens anytime
     function withdrawTokens(address addr) public onlyOwner {
-        require(hasClosed());
+        // require(hasClosed());
         uint256 amount = balances[addr];
         require(amount > 0);
         balances[addr] = 0;
