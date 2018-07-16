@@ -1,7 +1,6 @@
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/crowdsale/distribution/PostDeliveryCrowdsale.sol";
-import "openzeppelin-solidity/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsale.sol";
 
@@ -38,12 +37,12 @@ contract KratosFinalsale is CappedCrowdsale, WhitelistedCrowdsale, PostDeliveryC
     }
 
     // allow withdrawal of tokens anytime
-    function withdrawTokens(address addr) public onlyOwner {
+    function withdrawTokens(address _addr) public onlyOwner {
         // require(hasClosed());
-        uint256 amount = balances[addr];
+        uint256 amount = balances[_addr];
         require(amount > 0);
-        balances[addr] = 0;
-        _deliverTokens(addr, amount);
+        balances[_addr] = 0;
+        _deliverTokens(_addr, amount);
     }
 
 }

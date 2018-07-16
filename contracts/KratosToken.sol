@@ -5,40 +5,40 @@ import "openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
 
 contract KratosToken is StandardBurnableToken, PausableToken {
 
-    string public name = "KRATOS";
-    string public symbol = "TOS";
-    uint8 public decimals = 18;
+    string constant public name = "KRATOS";
+    string constant public symbol = "TOS";
+    uint8 constant public decimals = 18;
 
     uint256 public timelockTimestamp = 0;
     mapping(address => uint256) public timelock;
 
-    constructor(uint256 totalSupply) public {
+    constructor(uint256 _totalSupply) public {
         // constructor
-        totalSupply_ = totalSupply;
-        balances[msg.sender] = totalSupply;
+        totalSupply_ = _totalSupply;
+        balances[msg.sender] = _totalSupply;
     }
 
-    event TimeLocked(address indexed beneficary, uint256 timestamp);
-    event TimeUnlocked(address indexed beneficary);
+    event TimeLocked(address indexed _beneficary, uint256 _timestamp);
+    event TimeUnlocked(address indexed _beneficary);
 
     /**
     * @dev Modifier to make a function callable only when the contract is not timelocked or timelock expired.
     */
-    modifier whenNotTimelocked(address beneficary) {
-        require(timelock[beneficary] == 0 || timelock[beneficary] <= block.timestamp);
+    modifier whenNotTimelocked(address _beneficary) {
+        require(timelock[_beneficary] <= block.timestamp);
         _;
     }
 
     /**
     * @dev Modifier to make a function callable only when the contract is timelocked and not expired.
     */
-    modifier whenTimelocked(address beneficary) {
-        require(timelock[beneficary] > 0 && timelock[beneficary] > block.timestamp);
+    modifier whenTimelocked(address _beneficary) {
+        require(timelock[_beneficary] > block.timestamp);
         _;
     }
 
     function enableTimelock(uint256 _timelockTimestamp) onlyOwner public {
-        require(timelockTimestamp == 0 || timelockTimestamp > block.timestamp);
+        require(timelockTimestamp == 0 || _timelockTimestamp > block.timestamp);
         timelockTimestamp = _timelockTimestamp;
     }
 
@@ -49,22 +49,22 @@ contract KratosToken is StandardBurnableToken, PausableToken {
     /**
     * @dev called by the owner to timelock token belonging to beneficary
     */
-    function addTimelock(address beneficary, uint256 timestamp) public onlyOwner whenNotTimelocked(beneficary) {
-        _addTimelock(beneficary, timestamp);
+    function addTimelock(address _beneficary, uint256 _timestamp) public onlyOwner {
+        _addTimelock(_beneficary, _timestamp);
     }
 
-    function _addTimelock(address beneficary, uint256 timestamp) internal whenNotTimelocked(beneficary) {
-        require(timestamp > block.timestamp);
-        timelock[beneficary] = timestamp;
-        emit TimeLocked(beneficary, timestamp);
+    function _addTimelock(address _beneficary, uint256 _timestamp) internal whenNotTimelocked(_beneficary) {
+        require(_timestamp > block.timestamp);
+        timelock[_beneficary] = _timestamp;
+        emit TimeLocked(_beneficary, _timestamp);
     }
 
     /**
     * @dev called by the owner to timeunlock token belonging to beneficary
     */
-    function removeTimelock(address beneficary) onlyOwner whenTimelocked(beneficary) public {
-        timelock[beneficary] = 0;
-        emit TimeUnlocked(beneficary);
+    function removeTimelock(address _beneficary) onlyOwner whenTimelocked(_beneficary) public {
+        timelock[_beneficary] = 0;
+        emit TimeUnlocked(_beneficary);
     }
 
     function transfer(address _to, uint256 _value) public whenNotTimelocked(msg.sender) returns (bool) {

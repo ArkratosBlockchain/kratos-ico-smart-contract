@@ -1,7 +1,6 @@
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/crowdsale/distribution/PostDeliveryCrowdsale.sol";
-import "openzeppelin-solidity/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsale.sol";
 
@@ -10,7 +9,6 @@ import "./KratosToken.sol";
 contract KratosPresale is CappedCrowdsale, /*RefundableCrowdsale,*/ WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
     constructor(
-        uint256 _goal,
         uint256 _cap,
         uint256 _openingTime,
         uint256 _closingTime,
@@ -20,7 +18,6 @@ contract KratosPresale is CappedCrowdsale, /*RefundableCrowdsale,*/ WhitelistedC
     ) public
         Crowdsale(_rate, _wallet, _token)
         CappedCrowdsale(_cap) // hard cap
-//        RefundableCrowdsale(_goal) // soft cap, allow refund if goal not reached
         TimedCrowdsale(_openingTime, _closingTime) {
     }
 
@@ -40,24 +37,11 @@ contract KratosPresale is CappedCrowdsale, /*RefundableCrowdsale,*/ WhitelistedC
     }
 
     // allow withdrawal of tokens anytime
-    function withdrawTokens(address addr) public onlyOwner {
+    function withdrawTokens(address _addr) public onlyOwner {
         // require(hasClosed());
-        uint256 amount = balances[addr];
+        uint256 amount = balances[_addr];
         require(amount > 0);
-        balances[addr] = 0;
-        _deliverTokens(addr, amount);
+        balances[_addr] = 0;
+        _deliverTokens(_addr, amount);
     }
-
-    // allow withdrawal of funds anytime
-    // function withdrawFunds() public onlyOwner {
-        
-    //     wallet.transfer(address(vault).balance);
-    // } 
-
-    // function claimRefund(address addr) public onlyOwner {
-    //     require(isFinalized);
-    //     require(!goalReached());
-
-    //     vault.refund(addr);
-    // }
 }
