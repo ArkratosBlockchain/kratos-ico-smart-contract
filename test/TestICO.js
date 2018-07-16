@@ -9,12 +9,13 @@ contract('KratosPresale', async (accounts) => {
     const tokenTotalSupply = 3e26;
     const tokenPresaleSupply = 8e25;
     const deployDelay = 30
-    const goal = web3.toWei("1", "ether")
     const cap = web3.toWei("10", "ether")
     const openingTime = web3.eth.getBlock('latest').timestamp + deployDelay
     const closingTime = openingTime + 86400 * 20 // 20 days
     const rate = new web3.BigNumber(1250)
     const wallet = web3.eth.accounts[1]
+
+    const timelockTimestamp = web3.eth.getBlock('latest').timestamp + 86400 * 180
 
     let token = null
     let presale = null
@@ -25,7 +26,6 @@ contract('KratosPresale', async (accounts) => {
             token = instance
 
             return KratosPresale.new(
-                goal,
                 cap,
                 openingTime,
                 closingTime,
@@ -39,7 +39,7 @@ contract('KratosPresale', async (accounts) => {
 
             // transfer supply to crowdsale contract
             await token.transfer(presale.address, tokenPresaleSupply);
-            token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180);
+            token.enableTimelock(timelockTimestamp);
         
             // advance block so that it is pass the opening time during deployment
             web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", id: Date.now()})
@@ -187,23 +187,25 @@ contract('KratosPresale', async (accounts) => {
 
     it('should timelock Presale tokens', async () => {
         try {
-            await token.transfer(accounts[8], 1, {from: accounts[7]})
+            await token.transfer(accounts[5], 1, {from: accounts[7]})
         } catch(error) {
             assert.equal(error.toString(), "Error: VM Exception while processing transaction: revert", "Not a EVM error")
         }
     })
 
     it('should be able to transfer token after timelock', async () => {
-        const senderPreBalance = await token.balanceOf(accounts[7])
+        // advance to time after timelock period
+        web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [timelockTimestamp+1], id: Date.now()})
 
-        await token.disableTimelock()
-        await token.removeTimelock(accounts[7])
-        await token.transfer(accounts[8], 1e18, {from: accounts[7]})
+        const senderPreBalance = await token.balanceOf(accounts[7])
+        const receipientPreBalance = await token.balanceOf(accounts[5])
+
+        await token.transfer(accounts[5], 1e18, {from: accounts[7]})
 
         const senderPostBalance = await token.balanceOf(accounts[7])
         assert.equal(senderPreBalance.toNumber() - senderPostBalance.toNumber(), 1e18, "1 token is not transfered out of sender")
 
-        const balance = await token.balanceOf(accounts[8])
-        assert.equal(balance.toNumber(), 1e18, "1 token is not received by recipient")
+        const receipientPostBalance = await token.balanceOf(accounts[5])
+        assert.equal(receipientPostBalance.toNumber() - receipientPreBalance.toNumber(), 1e18, "1 token is not received by recipient")
     })
 })
