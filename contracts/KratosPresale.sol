@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsal
 
 import "./KratosToken.sol";
 
-contract KratosPresale is CappedCrowdsale, /*RefundableCrowdsale,*/ WhitelistedCrowdsale, PostDeliveryCrowdsale {
+contract KratosPresale is CappedCrowdsale, WhitelistedCrowdsale, PostDeliveryCrowdsale {
 
     constructor(
         uint256 _cap,
