@@ -57,7 +57,7 @@ provider:
   environment:
     DYNAMODB_TABLE: "${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
     ETHEREUM_URI: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/ethereum-uri}"
-    WALLET_ADDRESS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/wallet-address}"
+    CONTRACT_ADDRESS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-address}"
     API_URL: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-url}"
     API_USER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-user}"
     API_PASS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-pass}"
@@ -70,9 +70,9 @@ provider:
 #   exclude:
 #     - node_modules/scrypt/**
 #     - node_modules/nan/**
-package:
-  include:
-    - ../build/contracts/Kratos*.json
+# package:
+#   include:
+#     - ../build/contracts/Kratos*.json
 
 functions:
   ico-purchase-processor:
@@ -128,7 +128,7 @@ resources:
     purchaseMonitorTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: purchaseProcessed
+        TableName: purchaseProcessed-${opt:stage, self:provider.stage}
         AttributeDefinitions:
           - AttributeName: txHash
             AttributeType: S
