@@ -15,8 +15,7 @@ module.exports = async (deployer, network) => {
 
   if (network === 'live-presale' || network === 'ropsten') {
 
-    const goal = 80e24
-    const cap = 5e24
+    const cap = 80e24
     const openingTime = web3.eth.getBlock('latest').timestamp+deployDelay // !IMPT :: opening timestamp has to be much later when deploying to public networks as it takes some time before contract gets initialized
     const closingTime = openingTime + 86400 * 20 // 20 days
     const rate = new web3.BigNumber(1250)
@@ -30,7 +29,6 @@ module.exports = async (deployer, network) => {
 
       console.log("deploying presale...")
       console.log(KratosToken.address)
-      console.log(goal)
       console.log(cap)
       console.log(openingTime)
       console.log(closingTime)
@@ -40,7 +38,6 @@ module.exports = async (deployer, network) => {
       // deploy crowdsale contract with initialization parameters
       return deployer.deploy(
         KratosPresale,
-        goal,
         cap,
         openingTime,
         closingTime,
