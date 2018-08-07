@@ -54,7 +54,7 @@ module.exports = async (deployer, network) => {
 
       // transfer supply to crowdsale contract
       const token = KratosToken.at(KratosToken.address)
-      await token.transfer(KratosPresale.address, goal)
+      await token.transfer(KratosPresale.address, cap)
       token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180)
 
     })
