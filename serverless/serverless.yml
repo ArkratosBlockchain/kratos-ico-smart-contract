@@ -17,6 +17,14 @@ service: ico-event-processor
 # Check out our docs for more details
 # frameworkVersion: "=X.X.X"
 
+custom:
+  abiPath:
+    staging: ./build/contracts/KratosPresale.json
+    production: ./KratosPresale.abi
+  whitelistName:
+    staging: addToWhitelist
+    production: addAddressToWhitelist
+
 provider:
   name: aws
   runtime: nodejs8.10
@@ -51,17 +59,24 @@ provider:
           - dynamodb:PutItem
           - dynamodb:UpdateItem
           - dynamodb:DeleteItem
-        Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+        Resource: 
+          - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+          - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:resources.Resources.whitelistTable.Properties.TableName}"
 
   # you can define service wide environment variables here
   environment:
-    DYNAMODB_TABLE: "${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+    DYNAMODB_PURCHASE_TABLE: "${self:resources.Resources.purchaseMonitorTable.Properties.TableName}"
+    DYNAMODB_WHITELIST_TABLE: "${self:resources.Resources.whitelistTable.Properties.TableName}"
     ETHEREUM_URI: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/ethereum-uri}"
     CONTRACT_ADDRESS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-address}"
     API_URL: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-url}"
     API_USER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-user}"
     API_PASS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-pass}"
     CONTRACT_JSON_PATH: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-json-path}"
+    ABI_PATH: "${self:custom.abiPath.${opt:stage, self:provider.stage}}"
+    CONTRACT_WHITELIST_METHOD_NAME: "${self:custom.whitelistName.${opt:stage, self:provider.stage}}"
+    CONTRACT_OWNER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-owner}"
+    CONTRACT_OWNER_PRIVKEY: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-owner-privkey}"
 
 # you can add packaging information here
 # package:
@@ -70,14 +85,21 @@ provider:
 #   exclude:
 #     - node_modules/scrypt/**
 #     - node_modules/nan/**
-# package:
-#   include:
-#     - ../build/contracts/Kratos*.json
+package:
+  include:
+    - ../build/contracts/Kratos*.json
 
 functions:
+  ico-whitelist-processor:
+    handler: eventprocessor.whitelist
+    events:
+      - schedule: rate(1 minute)
+  ico-notify-whitelisted-processor:
+    handler: eventprocessor.notify_whitelisted
+    events:
+      - schedule: rate(1 minute)
   ico-purchase-processor:
     handler: eventprocessor.purchase
-
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -138,6 +160,23 @@ resources:
           - AttributeName: txHash
             KeyType: HASH
           - AttributeName: blockNumber
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    whitelistTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: whitelist-${opt:stage, self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: address
+            AttributeType: S
+          - AttributeName: txHash
+            AttributeType: S
+        KeySchema:
+          - AttributeName: address
+            KeyType: HASH
+          - AttributeName: txHash
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
