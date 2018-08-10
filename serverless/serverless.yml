@@ -90,6 +90,8 @@ package:
     - ../build/contracts/Kratos*.json
 
 functions:
+  test:
+    handler: eventprocessor.test
   ico-whitelist-processor:
     handler: eventprocessor.whitelist
     events:
