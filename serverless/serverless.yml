@@ -156,13 +156,9 @@ resources:
         AttributeDefinitions:
           - AttributeName: txHash
             AttributeType: S
-          - AttributeName: blockNumber
-            AttributeType: N
         KeySchema:
           - AttributeName: txHash
             KeyType: HASH
-          - AttributeName: blockNumber
-            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

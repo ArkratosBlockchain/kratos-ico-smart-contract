@@ -97,11 +97,11 @@ module.exports.whitelist = async (event, context, callback) => {
                     whitelisted: false
                   }
                 }).promise()
-                // .catch( (err) => {
-                //   console.log("Unable to store whitelist address and txHash")
-                //   console.log(err)
-                //   callback(err, null)
-                // })
+                .catch( (err) => {
+                  console.log("Unable to store whitelist address and txHash")
+                  console.log(err)
+                  callback(err, null)
+                })
 
                 resolve(txHash)    
 
@@ -233,16 +233,20 @@ module.exports.purchase = async (event, context, callback) => {
       // if blockNumber to be processed is the same as the blockNumber last processed, check txHash
       if (fromBlock === purchase.blockNumber) {
 
-        await docClient.get({
+        await docClient.query({
           TableName: process.env.DYNAMODB_PURCHASE_TABLE,
-          Key: {
-            txHash: purchase.transactionHash,
-            blockNumber: fromBlock
-          }
+          KeyConditionExpression: "txHash = :txHash",
+          FilterExpression: "blockNumber = :blockNumber",
+          ExpressionAttributeValues: {
+            ":txHash": purchase.transactionHash,
+            ":blockNumber": fromBlock
+          },
+          
+      
         }).promise().then((data) => {
           console.log('check txHash + blockNumber match', data)
           // push for processing only if record has not been processed before
-          if (!data.Item) {
+          if (!data.Items) {
             purchases.push({
               blockNumber: purchase.blockNumber,
               txHash: purchase.transactionHash,
