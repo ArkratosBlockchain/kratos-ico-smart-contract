@@ -1,6 +1,6 @@
 # KRATOS Token Crowdsale Smart Contract
 
-## Prequisite
+## Prerequisite
 - nodejs / npm
 - serverless
 - truffle
