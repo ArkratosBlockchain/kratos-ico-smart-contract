@@ -4,7 +4,7 @@ var KratosFinalsale = artifacts.require("./KratosFinalsale.sol")
 
 module.exports = async (deployer, network) => {
 
-  if (network === 'development')
+  if (network === 'test')
     return;
 
   let deployDelay = 60*30 // 30 minutes
@@ -13,7 +13,7 @@ module.exports = async (deployer, network) => {
     deployDelay = 60*10  // 10 minutes
   }
 
-  if (network === 'live-presale' || network === 'ropsten') {
+  if (network !== 'live-finalsale') {
 
     const cap = 80e24
     const openingTime = web3.eth.getBlock('latest').timestamp+deployDelay // !IMPT :: opening timestamp has to be much later when deploying to public networks as it takes some time before contract gets initialized
@@ -28,12 +28,12 @@ module.exports = async (deployer, network) => {
     }).then(async () => {
 
       console.log("deploying presale...")
-      console.log(KratosToken.address)
-      console.log(cap)
-      console.log(openingTime)
-      console.log(closingTime)
-      console.log(rate)
-      console.log(wallet)
+      console.log('token address', KratosToken.address)
+      console.log('soft cap', cap)
+      console.log('opening time', openingTime)
+      console.log('closing time', closingTime)
+      console.log('conversion rate', rate)
+      console.log('wallet address', wallet)
     
       // deploy crowdsale contract with initialization parameters
       return deployer.deploy(
@@ -58,7 +58,7 @@ module.exports = async (deployer, network) => {
       token.enableTimelock(web3.eth.getBlock('latest').timestamp + 86400 * 180)
 
     })
-  } else if (network === 'live-finalsale') {
+  } else {
 
     return deployer.then(async () => {
       // IMPT :: need to separate presale and finalsale because timelock value will affect presale if set in final sale for testing
