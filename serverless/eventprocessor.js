@@ -62,7 +62,7 @@ module.exports.whitelist = async (event, context, callback) => {
 
         if (data.Count == 0) {
           // send address for whitelisting
-          let addAddressToWhitelist = contract.methods[process.env.CONTRACT_WHITELIST_METHOD_NAME](address)
+          let addAddressToWhitelist = contract.methods['addAddressToWhitelist'](address)
           let gasLimit = await addAddressToWhitelist.estimateGas({ from: process.env.CONTRACT_OWNER }) + 50000
           console.log(`gasLimit ${gasLimit}`)
 

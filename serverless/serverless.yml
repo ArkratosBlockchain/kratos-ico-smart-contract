@@ -19,11 +19,8 @@ service: ico-event-processor
 
 custom:
   abiPath:
-    staging: ./build/contracts/KratosPresale.json
-    production: ./KratosPresale.abi
-  whitelistName:
-    staging: addToWhitelist
-    production: addAddressToWhitelist
+    staging: ./build/contracts/KratosFinalsale.json
+    production: ./KratosFinalsale.abi
 
 provider:
   name: aws
@@ -72,9 +69,7 @@ provider:
     API_URL: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-url}"
     API_USER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-user}"
     API_PASS: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/api-pass}"
-    CONTRACT_JSON_PATH: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-json-path}"
     ABI_PATH: "${self:custom.abiPath.${opt:stage, self:provider.stage}}"
-    CONTRACT_WHITELIST_METHOD_NAME: "${self:custom.whitelistName.${opt:stage, self:provider.stage}}"
     CONTRACT_OWNER: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-owner}"
     CONTRACT_OWNER_PRIVKEY: "${ssm:/ico-event-processor/${opt:stage, self:provider.stage}/contract-owner-privkey}"
 
