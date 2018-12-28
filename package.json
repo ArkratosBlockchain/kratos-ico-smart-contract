@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "fast-csv": "^2.4.1",
-    "openzeppelin-solidity": "^1.12.0-rc.2"
+    "openzeppelin-solidity": "^1.12.0-rc.2",
+    "truffle-hdwallet-provider": "^1.0.1"
   }
 }
