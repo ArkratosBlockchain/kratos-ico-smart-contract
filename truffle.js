@@ -26,7 +26,7 @@ module.exports = {
       network_id: '*' // Match any network id
     },
     ropsten: {
-      gas: 4712388,
+      gas: 8000000,
       gasPrice: gasPrice,
       host: '127.0.0.1',
       port: 8545,
